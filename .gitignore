@@ -1,0 +1,9 @@
+.terraform
+.venv
+*.tfplan.*json
+*.tfstate
+*.tfstate.*json
+*.tfvars
+*.tfvars.json
+*.tfplan
+*.tfplan.json
