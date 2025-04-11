@@ -1,24 +1,37 @@
-# app.py
 import cv2
 import boto3
 import time
 from botocore.exceptions import ClientError
 from flask import Flask, jsonify, render_template, request
 import threading
-import os
+import logging
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
+# Defina a região da AWS
+REGION = 'us-east-1'
+
 # Configurações AWS
-rekognition = boto3.client('rekognition')
-dynamodb = boto3.resource('dynamodb')
-TABLE_NAME = 'EventFaces'  # Mesmo nome definido no Terraform
-RTSP_URL = 'rtsp://192.168.1.6:4747/video'
-is_counting = False
+rekognition = boto3.client('rekognition', region_name=REGION)
+dynamodb = boto3.resource('dynamodb', region_name=REGION)
+
+# Nome da tabela DynamoDB (deve corresponder ao Terraform)
+TABLE_NAME = 'EventFaces'
+
+# URL RTSP do DroidCam via VPN (ajuste conforme o IP da VPN)
+RTSP_URL = 'rtsp://10.8.0.2:4747/video'
+
+# ID da coleção Rekognition (deve corresponder ao Terraform)
 face_collection_id = 'EventFaces'
 
 # Inicializar DynamoDB
 table = dynamodb.Table(TABLE_NAME)
+
+is_counting = False
 
 def process_stream():
     global is_counting
@@ -27,7 +40,7 @@ def process_stream():
     while is_counting and cap.isOpened():
         ret, frame = cap.read()
         if not ret:
-            print("Erro ao capturar frame")
+            logger.error("Erro ao capturar frame")
             time.sleep(1)
             continue
 
@@ -53,6 +66,7 @@ def process_stream():
 
                 if search_response['FaceMatches']:
                     face_id = search_response['FaceMatches'][0]['Face']['FaceId']
+                    logger.info(f"Rosto encontrado: {face_id}")
                 else:
                     # Indexar novo rosto
                     index_response = rekognition.index_faces(
@@ -69,9 +83,10 @@ def process_stream():
                                 'Timestamp': int(time.time())
                             }
                         )
+                        logger.info(f"Novo rosto indexado e salvo: {face_id}")
 
         except ClientError as e:
-            print(f"Erro no Rekognition: {e}")
+            logger.error(f"Erro no Rekognition: {e}")
             time.sleep(1)
             continue
 
@@ -107,13 +122,8 @@ def get_count():
         count = len(response['Items'])
         return jsonify({'count': count})
     except ClientError as e:
+        logger.error(f"Erro ao consultar DynamoDB: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    # Criar coleção Rekognition, se não existir
-    try:
-        rekognition.create_collection(CollectionId=face_collection_id)
-    except rekognition.exceptions.ResourceAlreadyExistsException:
-        pass
-
     app.run(host='0.0.0.0', port=80)
