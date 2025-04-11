@@ -1,0 +1,48 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Contador de Público</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; }
+    button { padding: 10px 20px; margin: 10px; }
+    #count { font-size: 24px; }
+  </style>
+</head>
+<body>
+  <h1>Contador de Público</h1>
+  <button onclick="startCounter()">Iniciar Contagem</button>
+  <button onclick="stopCounter()">Parar Contagem</button>
+  <button onclick="getCount()">Atualizar Contagem</button>
+  <p>Número de participantes: <span id="count">0</span></p>
+
+  <script>
+    async function startCounter() {
+      const response = await fetch('/api/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start' })
+      });
+      const data = await response.json();
+      alert(data.message || data.error);
+    }
+
+    async function stopCounter() {
+      const response = await fetch('/api/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'stop' })
+      });
+      const data = await response.json();
+      alert(data.message || data.error);
+    }
+
+    async function getCount() {
+      const response = await fetch('/api/count');
+      const data = await response.json();
+      document.getElementById('count').innerText = data.count || 0;
+    }
+  </script>
+</body>
+</html>
