@@ -8,12 +8,12 @@ module "networking" {
   my_ip         = var.my_ip
 }
 
-module "vpn" {
-  source        = "terraform-aws-modules/openvpn/aws"
-  version       = "~> 1.0"
+module "openvpn" {
+  source        = "./modules/vpn"
   vpc_id        = module.networking.vpc_id
   subnet_id     = module.networking.public_subnet_id
   openvpn_users = ["user1"]
+  my_ip         = var.my_ip
 }
 
 module "compute" {

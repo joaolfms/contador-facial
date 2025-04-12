@@ -1,3 +1,4 @@
+# modules/networking/main.tf
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
   tags = {
@@ -51,8 +52,8 @@ resource "aws_security_group" "ec2_sg" {
     from_port   = 4747
     to_port     = 4747
     protocol    = "tcp"
-    cidr_blocks = [var.smartphone_ip]
-    description = "RTSP para DroidCam"
+    cidr_blocks = ["10.8.0.0/24"]  # Rede da VPN para o DroidCam
+    description = "RTSP para DroidCam via VPN"
   }
 
   ingress {
@@ -68,7 +69,7 @@ resource "aws_security_group" "ec2_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-    description = "Saída para todos os destinos"
+    description = "Saida para todos os destinos"
   }
 
   tags = {

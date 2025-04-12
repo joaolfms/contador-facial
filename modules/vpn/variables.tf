@@ -13,3 +13,14 @@ variable "openvpn_users" {
   type        = list(string)
   default     = ["user1"]
 }
+
+variable "my_ip" {
+  description = "Seu endereço IP para acesso SSH"
+  type        = string
+}
+
+variable "key_name" {
+  description = "Nome do par de chaves SSH para acessar a instância EC2"
+  type        = string
+  default     = "rufus"
+}

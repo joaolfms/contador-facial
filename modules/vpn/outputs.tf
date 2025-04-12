@@ -1,4 +1,4 @@
 output "vpn_endpoint" {
   description = "Endpoint do servidor OpenVPN"
-  value       = module.openvpn.public_ip
+  value       = aws_instance.openvpn.public_ip
 }

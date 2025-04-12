@@ -5,15 +5,18 @@ variable "region" {
 
 variable "smartphone_ip" {
   description = "Endereço IP do smartphone que executa o DroidCam"
-  type        = "http://192.168.1.6:4747/video"
+  type        = string
+  default     = "10.8.0.2/32"
 }
 
 variable "my_ip" {
   description = "Seu endereço IP para acesso SSH"
-  type        = "177.84.47.208/32"
+  type        = string
+  default     = "177.84.47.208/32"
 }
 
 variable "key_name" {
   description = "Nome do par de chaves SSH para acessar a instância EC2"
-  type        = "rufus.pem"
+  type        = string
+  default     = "rufus"
 }
