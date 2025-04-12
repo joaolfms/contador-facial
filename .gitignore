@@ -8,3 +8,6 @@
 *.tfplan
 *.tfplan.json
 *.pem
+*.key
+*crt
+

@@ -6,18 +6,25 @@ from flask import Flask, jsonify, render_template, request
 import threading
 import logging
 
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
+# Configurar logging para arquivo
+logging.basicConfig(level=logging.INFO, filename='/home/ec2-user/event-counter/flask.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Log de inicialização
+logger.info("Iniciando a aplicação Flask...")
 
 # Defina a região da AWS
 REGION = 'us-east-1'
 
 # Configurações AWS
-rekognition = boto3.client('rekognition', region_name=REGION)
-dynamodb = boto3.resource('dynamodb', region_name=REGION)
+try:
+    rekognition = boto3.client('rekognition', region_name=REGION)
+    dynamodb = boto3.resource('dynamodb', region_name=REGION)
+    logger.info("Clientes AWS inicializados com sucesso")
+except Exception as e:
+    logger.error(f"Erro ao inicializar clientes AWS: {e}")
 
 # Nome da tabela DynamoDB (deve corresponder ao Terraform)
 TABLE_NAME = 'EventFaces'
@@ -29,12 +36,17 @@ RTSP_URL = 'http://10.8.0.6:4747/video'
 face_collection_id = 'EventFaces'
 
 # Inicializar DynamoDB
-table = dynamodb.Table(TABLE_NAME)
+try:
+    table = dynamodb.Table(TABLE_NAME)
+    logger.info("Tabela DynamoDB inicializada com sucesso")
+except Exception as e:
+    logger.error(f"Erro ao inicializar tabela DynamoDB: {e}")
 
 is_counting = False
 
 def process_stream():
     global is_counting
+    logger.info(f"Tentando abrir stream: {RTSP_URL}")
     cap = cv2.VideoCapture(RTSP_URL)
 
     if not cap.isOpened():
@@ -104,33 +116,48 @@ def process_stream():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    logger.info("Acessando a rota /")
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        logger.error(f"Erro ao carregar index.html: {e}")
+        return jsonify({'error': 'Erro ao carregar a página inicial: ' + str(e)}), 500
 
 @app.route('/api/control', methods=['POST'])
 def control():
+    logger.info("Acessando a rota /api/control")
     global is_counting
     action = request.json.get('action')
 
     if action == 'start' and not is_counting:
         is_counting = True
         threading.Thread(target=process_stream, daemon=True).start()
+        logger.info("Contagem iniciada")
         return jsonify({'message': 'Contagem iniciada'})
     
     elif action == 'stop' and is_counting:
         is_counting = False
+        logger.info("Contagem parada")
         return jsonify({'message': 'Contagem parada'})
     
+    logger.error("Ação inválida ou estado incorreto")
     return jsonify({'error': 'Ação inválida ou estado incorreto'}), 400
 
 @app.route('/api/count', methods=['GET'])
 def get_count():
+    logger.info("Acessando a rota /api/count")
     try:
         response = table.scan()
         count = len(response['Items'])
+        logger.info(f"Contagem atual: {count}")
         return jsonify({'count': count})
     except ClientError as e:
         logger.error(f"Erro ao consultar DynamoDB: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)
+    logger.info("Iniciando Flask na porta 80")
+    try:
+        app.run(host='0.0.0.0', port=80)
+    except Exception as e:
+        logger.error(f"Erro ao iniciar o Flask: {e}")
