@@ -22,8 +22,8 @@ dynamodb = boto3.resource('dynamodb', region_name=REGION)
 # Nome da tabela DynamoDB (deve corresponder ao Terraform)
 TABLE_NAME = 'EventFaces'
 
-# URL RTSP do DroidCam via VPN (ajuste conforme o IP da VPN)
-RTSP_URL = 'rtsp://10.8.0.2:4747/video'
+# URL do stream DroidCam (HTTP/MJPEG)
+RTSP_URL = 'http://10.8.0.6:4747/video'
 
 # ID da coleção Rekognition (deve corresponder ao Terraform)
 face_collection_id = 'EventFaces'
@@ -36,6 +36,12 @@ is_counting = False
 def process_stream():
     global is_counting
     cap = cv2.VideoCapture(RTSP_URL)
+
+    if not cap.isOpened():
+        logger.error("Erro: Não foi possível abrir o stream de vídeo do DroidCam")
+        return
+
+    logger.info("Stream de vídeo aberto com sucesso")
 
     while is_counting and cap.isOpened():
         ret, frame = cap.read()
@@ -91,9 +97,10 @@ def process_stream():
             continue
 
         # Aguardar antes de processar o próximo frame
-        time.sleep(2)  # Ajuste conforme necessário
+        time.sleep(2)
 
     cap.release()
+    logger.info("Stream de vídeo encerrado")
 
 @app.route('/')
 def index():
